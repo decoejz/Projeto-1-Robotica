@@ -14,7 +14,7 @@ from geometry_msgs.msg import Twist, Vector3, Pose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
-python deteccao/findobjs.py as procura_obj
+import findobjs as procura_obj
 
 bridge = CvBridge()
 
@@ -63,7 +63,10 @@ if __name__=="__main__":
 
 		while not rospy.is_shutdown():
 			vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
-			achou_obj_1 = procura_obj.findobj1(frame)
+
+			recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=1, buff_size = 2**24)
+			achou_obj_1 = procura_obj.findobj1(recebedor)
+			
 			if achou_obj_1:
 				vel = Twist(Vector3(-0.5,0,0), Vector3(0,0,0))
 # 			if len(media) != 0 and len(centro) != 0:
