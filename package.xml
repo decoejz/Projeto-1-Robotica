@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
   <name>Projeto-1-Robotica</name>
-  <version>0.0.0</version>
-  <description>Diretorio github</description>
+  <version>1.0.0</version>
+  <description>Trabalho 1 de robotica computacional</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
