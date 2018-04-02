@@ -15,15 +15,18 @@ def scaneou(dado):
 	# print(np.array(dado.ranges).round(decimals=2))
 	distancia_segura = 0.5
 	valor_minimo = 0.6
+	var=0
 	for i in range(90):
 		if dado.ranges[i-45] < dado.range_max and dado.ranges[i-45] > dado.range_min:
 			valor = dado.ranges[i-45]
 			print(valor)
 	
 			if valor < distancia_segura:
-				velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 1))
-				velocidade_saida.publish(velocidade)
-				return True
+				var += 1
+				if var > 5:
+					velocidade = Twist(Vector3(-1, 0, 0), Vector3(0, 0, 1))
+					velocidade_saida.publish(velocidade)
+					return True
 			else:
 				velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(velocidade)
