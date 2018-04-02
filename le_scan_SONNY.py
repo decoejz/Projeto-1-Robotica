@@ -15,17 +15,24 @@ def scaneou(dado):
 	# print(np.array(dado.ranges).round(decimals=2))
 	distancia_segura = 0.5
 	valor_minimo = 0.6
-	for i in range(len(dado.ranges)):
-		if dado.ranges[i] < dado.range_max and dado.ranges[i] > dado.range_min:
-			valor_minimo = dado.ranges[i]
-			print(valor_minimo)
+	for i in range(90):
+		if dado.ranges[i-45] < dado.range_max and dado.ranges[i-45] > dado.range_min:
+			valor = dado.ranges[i-45]
+			print(valor)
 	
-		elif valor_minimo < distancia_segura:
-			velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-			velocidade_saida.publish(velocidade)
+			if valor < distancia_segura:
+				velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 1))
+				velocidade_saida.publish(velocidade)
+				return True
+			else:
+				velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(velocidade)
+				return False
+
 		else:
-			velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 1))
+			velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(velocidade)
+			return False
 
 		print(np.array(dado.ranges).round(decimals=2))
 		#print("Intensities")
