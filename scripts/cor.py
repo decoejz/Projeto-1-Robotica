@@ -27,7 +27,7 @@ perigo = False
 
 atraso = 1.5
 
-check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
+check_delay = False # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 	
 def contorno_quadrado():
 	distancia_risco = 5#Checar qual a unidade(m, cm, mm....)

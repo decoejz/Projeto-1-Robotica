@@ -1,5 +1,8 @@
 import cv2
 import numpy as np
+from math import pi
+import matplotlib.pyplot as plt
+
 def findobj1(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(1,1),0)
@@ -51,9 +54,6 @@ def findobj1(frame):
     x = [k.pt[0] for k in kpts]
     y = [k.pt[1] for k in kpts]
     s = [(k.size/2)**2 * pi for k in kpts]
-    plt.scatter(x, y, s, c='r', alpha=0.4)
-    plt.imshow(frame, cmap=cm.gray)
-    plt.title('SIFT')
     if findFox == True:
         return(True)
     else:
