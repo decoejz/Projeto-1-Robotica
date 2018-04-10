@@ -142,8 +142,8 @@ def main():
 	rospy.init_node('cor4_maq_est')
 
 	# Para usar a webcam 
-	#recebedor = rospy.Subscriber("/cv_camera/image_raw/compressed", CompressedImage, roda_todo_frame, queue_size=1, buff_size = 2**24)
-	recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
+	recebedor = rospy.Subscriber("/cv_camera/image_raw/compressed", CompressedImage, roda_todo_frame, queue_size=1, buff_size = 2**24)
+	#recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
 
@@ -163,7 +163,7 @@ def main():
 	                            'alinhou':'CENTRO'})
 	    smach.StateMachine.add('CENTRO', Centralizado(),
 	                            transitions={'alinhando': 'GIRANDO',
-	                            'alinhado':'ANDAR'})
+	                            'alinhado':'CENTRO'})
 	    smach.StateMachine.add('ANDAR', Aproximando(),
 	                            transitions={'andando': 'ANDAR',
 	                            'girando':'GIRANDO'})

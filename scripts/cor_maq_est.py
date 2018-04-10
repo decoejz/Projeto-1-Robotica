@@ -25,14 +25,15 @@ cv_image = None
 
 # Variáveis para permitir que o roda_todo_frame troque dados com a máquina de estados
 perigo_laser = False
+
 media1 = []
 centro1 = []
 area1 = 0.0
 
-media2 = []
-centro2 = []
-area2 = 0.0
-
+# media2 = []
+# centro2 = []
+# area2 = 0.0
+objeto2 = False
 
 tolerancia_x = 50
 tolerancia_y = 20
@@ -41,8 +42,8 @@ area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a
 tolerancia_area = 20000
 
 # Atraso máximo permitido entre a imagem sair do Turbletbot3 e chegar no laptop do aluno
-atraso = 1.5
-check_delay = False # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
+atraso = 0.4E9
+check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 
 
 
@@ -54,22 +55,23 @@ def roda_todo_frame(imagem):
 	global centro1
 	global area1
 
-	global media2
-	global centro2
-	global area2
+	# global media2
+	# global centro2
+	# global area2
+	global objeto2
 
 	now = rospy.get_rostime()
 	imgtime = imagem.header.stamp
 	lag = now-imgtime
-	delay = lag.secs
+	delay = lag.nsecs
 	if delay > atraso and check_delay==True:
 		return 
 	try:
 		antes = time.clock()
 		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
 		perigo_laser = False
-		media1, centro1, area1 = cormodule.identifica_cor1(cv_image)
-		media2, centro2, area2 = cormodule.identifica_cor2(cv_image)
+		media1, centro1, area1 = encontra_objetos.identifica_cor1(cv_image)
+		objeto2 = encontra_objetos.identifica_cor2(cv_image)
 		depois = time.clock()
 		cv2.imshow("Camera", cv_image)
 	except CvBridgeError as e:
@@ -99,40 +101,22 @@ class Girando(smach.State):
 			if  math.fabs(media1[0]) > math.fabs(centro1[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
 				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'girando'
 			if math.fabs(media1[0]) < math.fabs(centro1[0] - tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'girando'
 			else:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'alinhou1'
 
-		elif area2!=0:
-			if  math.fabs(media2[0]) > math.fabs(centro2[0] + tolerancia_x):
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
-				velocidade_saida.publish(vel)
-				rospy.sleep(1)
-				return 'girando'
-			if math.fabs(media2[0]) < math.fabs(centro2[0] - tolerancia_x):
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
-				velocidade_saida.publish(vel)
-				rospy.sleep(1)
-				return 'girando'
-			else:
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(vel)
-				rospy.sleep(1)
-				return 'alinhou2'
+		elif objeto2:
+			return 'alinhou2'
 
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
-			rospy.sleep(1)
 			return 'girando'
 
 class Reage1(smach.State):
@@ -148,19 +132,17 @@ class Reage1(smach.State):
 			return 'perigo'
 
 		else:
-			if media1 is None: #####O que significa a media ser nulo?#####
-				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
+			if media1 is None:
+				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'alinhado'
 			if  math.fabs(media1[0]) > math.fabs(centro1[0] + tolerancia_x):
 				return 'alinhando'
 			if math.fabs(media1[0]) < math.fabs(centro1[0] - tolerancia_x):
 				return 'alinhando'
 			else:
-				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
+				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'alinhando'
 
 class Reage2(smach.State):
@@ -173,23 +155,14 @@ class Reage2(smach.State):
 		if perigo_laser:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
-			rospy.sleep(1)
 			return 'perigo'
 
 		else:
-			if media2 is None: #####O que significa a media ser nulo?#####
-				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
+			if objeto2:
+				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'alinhado'
-			if  math.fabs(media2[0]) > math.fabs(centro2[0] + tolerancia_x):
-				return 'alinhando'
-			if math.fabs(media2[0]) < math.fabs(centro2[0] - tolerancia_x):
-				return 'alinhando'
 			else:
-				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(vel)
-				rospy.sleep(1)
 				return 'alinhando'
 
 class Parar(smach.State):
@@ -201,7 +174,6 @@ class Parar(smach.State):
 
 		vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 		velocidade_saida.publish(vel)
-		rospy.sleep(1)
 
 		if perigo_laser:
 			return 'perigo'
