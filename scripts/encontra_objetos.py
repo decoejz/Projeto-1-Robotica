@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
 
-
 import rospy
 import numpy as np
 import tf
@@ -17,7 +16,7 @@ import smach_ros
 import matplotlib.pyplot as plt
 from math import pi
 
-def identifica_cor1(frame):
+def identifica_objeto_1(frame):
 	'''
 	Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
 	'''
@@ -78,7 +77,7 @@ def identifica_cor1(frame):
 
 	return media, centro, maior_contorno_area
 
-def identifica_cor2(frame):
+def identifica_objeto_2(frame):
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	blur = cv2.GaussianBlur(gray,(1,1),0)
 	v2 = np.median(blur)

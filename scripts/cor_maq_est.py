@@ -1,9 +1,3 @@
-#! /usr/bin/env python
-# -*- coding:utf-8 -*-
-
-__author__ = ["Rachel P. B. Moraes", "Igor Montagner", "Fabio Miranda"]
-
-
 import rospy
 import numpy as np
 import tf
@@ -12,52 +6,50 @@ import cv2
 import time
 from geometry_msgs.msg import Twist, Vector3, Pose
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Image, CompressedImage
+from sensor_msgs.msg import Image, CompressedImage, LaserScan
 from cv_bridge import CvBridge, CvBridgeError
 import smach
 import smach_ros
+import encontra_objetos #Para procurar os objetos
+import le_scan_sonny #Para verificar se o robo esta em perigo
 
-import encontra_objetos
 
 bridge = CvBridge()
 
 cv_image = None
 
 # Variáveis para permitir que o roda_todo_frame troque dados com a máquina de estados
+#Verifica se o robo esta em perigo
 perigo_laser = False
-
-media1 = []
-centro1 = []
-area1 = 0.0
-
-# media2 = []
-# centro2 = []
-# area2 = 0.0
+#####################
+#Identificação do objeto 1
+media = []
+centro = []
+area = 0.0
+#####################
+#Identificação do objeto 2
 objeto2 = False
+#####################
 
 tolerancia_x = 50
 tolerancia_y = 20
-ang_speed = 0.4
+ang_speed = 0.3
 area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a resolução da câmera
 tolerancia_area = 20000
 
 # Atraso máximo permitido entre a imagem sair do Turbletbot3 e chegar no laptop do aluno
-atraso = 0.4E9
+atraso = 0.3E9
 check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
-
-
 
 
 def roda_todo_frame(imagem):
 	print("frame")
 	global cv_image
-	global media1
-	global centro1
-	global area1
 
-	# global media2
-	# global centro2
-	# global area2
+	global media
+	global centro
+	global area
+
 	global objeto2
 
 	now = rospy.get_rostime()
@@ -69,40 +61,41 @@ def roda_todo_frame(imagem):
 	try:
 		antes = time.clock()
 		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
+		
 		perigo_laser = False
-		media1, centro1, area1 = encontra_objetos.identifica_cor1(cv_image)
-		objeto2 = encontra_objetos.identifica_cor2(cv_image)
+		#Quando estiver pronto ativar o debaixo e desativar o de cima. Tem uma outra forma no final do codigo na linha 200 e 207
+		#perigo_laser = le_scan_sonny.scaneou()#Faltaria passar um argumento dentro do parenteses
+		media, centro, area = encontra_objetos.identifica_objeto_1(cv_image)
+		objeto2 = encontra_objetos.identifica_objeto_2(cv_image)
+		
 		depois = time.clock()
 		cv2.imshow("Camera", cv_image)
 	except CvBridgeError as e:
 		print('ex', e)
 	
 
-
-
-
-
 ## Classes - estados
 
-
+#Máquina que procura por objetos.
 class Girando(smach.State):
     def __init__(self):
     	#alinhou1 = referente ao objeto1
-    	#alinhou2 = referente ao objeto2
-        smach.State.__init__(self, outcomes=['perigo','alinhou1','alinhou2', 'girando'])
+        smach.State.__init__(self, outcomes=['perigo','alinhou1','enxergou2', 'girando'])
 
     def execute(self, userdata):
 		global velocidade_saida
 
 		if perigo_laser:
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
 			return 'perigo'
 		
-		elif area1!=0:
-			if  math.fabs(media1[0]) > math.fabs(centro1[0] + tolerancia_x):
+		elif area!=0: ##Verificar esse encontro direitinho!!!
+			if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
 				velocidade_saida.publish(vel)
 				return 'girando'
-			if math.fabs(media1[0]) < math.fabs(centro1[0] - tolerancia_x):
+			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x): #if ou elif?? o do prof era if!
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 				velocidade_saida.publish(vel)
 				return 'girando'
@@ -112,16 +105,19 @@ class Girando(smach.State):
 				return 'alinhou1'
 
 		elif objeto2:
-			return 'alinhou2'
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
+			return 'enxergou2'
 
 		else:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.3))
 			velocidade_saida.publish(vel)
 			return 'girando'
 
+#Máquina que reage quando o objeto 1 é encontrado
 class Reage1(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['alinhando', 'alinhado','perigo'])
+        smach.State.__init__(self, outcomes=['alinhando', 'centralizado','perigo'])
 
     def execute(self, userdata):
 		global velocidade_saida
@@ -132,22 +128,30 @@ class Reage1(smach.State):
 			return 'perigo'
 
 		else:
-			if media1 is None:
-				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(vel)
-				return 'alinhado'
-			if  math.fabs(media1[0]) > math.fabs(centro1[0] + tolerancia_x):
-				return 'alinhando'
-			if math.fabs(media1[0]) < math.fabs(centro1[0] - tolerancia_x):
-				return 'alinhando'
-			else:
-				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
+			if media is None:
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				return 'alinhando'
 
+			if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				return 'alinhando'
+			
+			if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				return 'alinhando'
+			
+			else:
+				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				return 'centralizado'
+
+#Máquina que reage quando o objeto 2 é encontrado
 class Reage2(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['alinhando', 'alinhado','perigo'])
+        smach.State.__init__(self, outcomes=['procurando', 'centralizado','perigo'])
 
     def execute(self, userdata):
 		global velocidade_saida
@@ -158,13 +162,16 @@ class Reage2(smach.State):
 			return 'perigo'
 
 		else:
-			if objeto2:
+			if objeto2 == False:
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				return 'procurando'
+			else:##Ver de emitir sons
 				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				return 'alinhado'
-			else:
-				return 'alinhando'
+				return 'centralizado'
 
+#Máquina que reage quando o robo se encontra em perigo (alguma coisa muito próximo dele)
 class Parar(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['seguro','perigo'])
@@ -184,13 +191,15 @@ class Parar(smach.State):
 def main():
 	global velocidade_saida
 	global buffer
-	rospy.init_node('cor4_maq_est')
+	#global perigo_laser
+	rospy.init_node('cor_maq_est')
 
 	# Para usar a webcam 
 	#recebedor = rospy.Subscriber("/cv_camera/image_raw/compressed", CompressedImage, roda_todo_frame, queue_size=1, buff_size = 2**24)
 	recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
+	#perigo_laser = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])
@@ -205,15 +214,15 @@ def main():
 	    #                       transitions={'ainda_longe':'LONGE'})
 	    smach.StateMachine.add('GIRANDO', Girando(),
 	                            transitions={'girando': 'GIRANDO',
-	                            'alinhou1':'REACAO1','alinhou2':'REACAO2','perigo':'PERIGOSO'})
+	                            'alinhou1':'REACAO1','enxergou2':'REACAO2','perigo':'PERIGOSO'})
 	    
 	    smach.StateMachine.add('REACAO1', Reage1(),
-	                            transitions={'alinhado': 'REACAO1',
+	                            transitions={'centralizado': 'REACAO1',
 	                            'alinhando':'GIRANDO','perigo':'PERIGOSO'})
 	    
 	    smach.StateMachine.add('REACAO2', Reage2(),
-	                            transitions={'alinhado': 'REACAO2',
-	                            'alinhando':'GIRANDO','perigo':'PERIGOSO'})
+	                            transitions={'centralizado': 'REACAO2',
+	                            'procurando':'GIRANDO','perigo':'PERIGOSO'})
 	    
 	    smach.StateMachine.add('PERIGOSO', Parar(),
 	                            transitions={'perigo': 'PERIGOSO',
