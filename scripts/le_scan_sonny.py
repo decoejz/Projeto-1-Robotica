@@ -10,33 +10,39 @@ from sensor_msgs.msg import LaserScan
 
 
 def scaneou(dado):
+	global perigo_laser
+	perigo_laser = False
 	# print("Faixa valida: ", dado.range_min , " - ", dado.range_max )
 	# print("Leituras:")
 	# print(np.array(dado.ranges).round(decimals=2))
-	distancia_segura = 0.5
+	distancia_segura = 15
 	valor_minimo = 0.6
 	var=0
-	for i in range(90):
+	for i in range(0,91,3):
 		if dado.ranges[i-45] < dado.range_max and dado.ranges[i-45] > dado.range_min:
 			valor = dado.ranges[i-45]
 			print(valor)
-	
+			print("Otario")
 			if valor < distancia_segura:
-				var += 1
-				if var > 5:
-					velocidade = Twist(Vector3(-1, 0, 0), Vector3(0, 0, 1))
+				if valor <=0:
+					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, -1))
 					velocidade_saida.publish(velocidade)
-					return True
+					perigo_laser = True
+					print("Nem Morri1!!")
+				if valor >0:
+					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 1))
+					velocidade_saida.publish(velocidade)
+					perigo_laser = True
+					print("Nem Morri2!!")
 			else:
-				velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
+				velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(velocidade)
-				return False
+				perigo_laser = False
 
 		else:
-			velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
+			velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(velocidade)
-			return False
-
+			perigo_laser = False
 		print(np.array(dado.ranges).round(decimals=2))
 		#print("Intensities")
 		#print(np.array(dado.intensities).round(decimals=2))

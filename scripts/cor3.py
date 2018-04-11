@@ -57,7 +57,7 @@ def roda_todo_frame(imagem):
 
 if __name__=="__main__":
 
-	rospy.init_node("cor")
+	rospy.init_node("cor3")
 
 	# Para usar a Raspberry Pi
 	topico_raspberry_camera = "/raspicam_node/image/compressed"
