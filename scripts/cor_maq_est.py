@@ -65,7 +65,7 @@ def roda_todo_frame(imagem):
 	delay = lag.nsecs
 
 	if delay > atraso and check_delay==True:
-		print("delay: {}".format(delay/1E9))
+		#print("delay: {}".format(delay/1E9))
 		return 
 	try:
 		antes = time.clock()
