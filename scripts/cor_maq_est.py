@@ -16,7 +16,7 @@ import smach_ros
 import encontra_objetos #Para procurar os objetos
 import le_scan_sonny #Para verificar se o robo esta em perigo
 
-from turtlebot3_msgs import Sound
+# from turtlebot3_msgs.msg import Sound
 
 
 bridge = CvBridge()
@@ -65,6 +65,7 @@ def roda_todo_frame(imagem):
 	delay = lag.nsecs
 
 	if delay > atraso and check_delay==True:
+		print("delay: {}".format(delay/E9))
 		return 
 	try:
 		antes = time.clock()
@@ -91,6 +92,7 @@ class Girando(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
+		# global emitir_som
 		#global perigo_laser
 
 		if perigo_laser:
@@ -118,8 +120,9 @@ class Girando(smach.State):
 			return 'enxergou2'
 
 		else:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.3))
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.5))
 			velocidade_saida.publish(vel)
+			# emitir_som.publish(0)
 			return 'girando'
 
 #Máquina que reage quando o objeto 1 é encontrado
@@ -165,7 +168,7 @@ class Reage2(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 		#global perigo_laser
-		global emitir_som
+		# global emitir_som
 
 		if perigo_laser:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
@@ -178,9 +181,9 @@ class Reage2(smach.State):
 				velocidade_saida.publish(vel)
 				return 'procurando'
 			else:##Ver de emitir sons
-				emitir_som.Publish()
-				# vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
-				# velocidade_saida.publish(vel)
+				# emitir_som.publish(1)
+				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
 				return 'centralizado'
 
 #Máquina que reage quando o robo se encontra em perigo (alguma coisa muito próximo dele)
@@ -204,7 +207,7 @@ class Parar(smach.State):
 def main():
 	global velocidade_saida
 	global buffer
-	global emitir_som
+	# global emitir_som
 	global perigo_laser
 	#global perigo_laser
 	rospy.init_node('cor_maq_est')
@@ -216,7 +219,7 @@ def main():
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
 	#perigo_laser = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
 
-	emitir_som = rospy.Publisher("/sound", Sound, value = 1)
+	# emitir_som = rospy.Publisher("/sound", Sound)
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])

@@ -85,7 +85,7 @@ def identifica_objeto_2(frame):
 	upper = int(min(255, (1.0 + 0.0001) * v2))
 	bordas = cv2.Canny(blur, lower, upper)    
 	cv2.imwrite("test.jpg",frame)
-	img1 = cv2.imread('pano2.jpg',0)          # Imagem a procurar
+	img1 = cv2.imread('foto_1.jpg',0)          # Imagem a procurar
 	img2 = cv2.imread("test.jpg",0)
 	findCircle = False
 	findFox =False
