@@ -15,32 +15,35 @@ def scaneou(dado):
 	# print("Faixa valida: ", dado.range_min , " - ", dado.range_max )
 	# print("Leituras:")
 	# print(np.array(dado.ranges).round(decimals=2))
-	distancia_segura = 0.5
-	var=0
+	distancia_segura = 2
 	for i in range(0,91,1):
-		print (dado.range_min)
 		if dado.ranges[i-45] < dado.range_max and dado.ranges[i-45] > dado.range_min:
 			valor = dado.ranges[i-45]
 			print(valor)
-			print("Otario")
+			print("Sai da frente!!!")
 			if valor < distancia_segura:
-				if valor <=0:
-					velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, -1))
+				if i <=0:
+					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 1))
 					velocidade_saida.publish(velocidade)
 					perigo_laser = True
 					print("Nem Morri1!!")
-				else:
-					velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 1))
+				elif i == 0:
+					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
+					velocidade_saida.publish(velocidade)
+					perigo_laser = True
+					print("Nem Morri1!!")
+				elif i >0:
+					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, -1))
 					velocidade_saida.publish(velocidade)
 					perigo_laser = True
 					print("Nem Morri2!!")
 			else:
-				velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade = Twist(Vector3(-1, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(velocidade)
 				perigo_laser = False
 
 		else:
-			velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade = Twist(Vector3(-1, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(velocidade)
 			perigo_laser = False
 		print(np.array(dado.ranges).round(decimals=2))
