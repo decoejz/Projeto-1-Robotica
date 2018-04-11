@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> a29da86071c997acabdd4d4d3c4cc101cb381cef
 import rospy
 import numpy as np
 import tf
@@ -23,7 +27,7 @@ bridge = CvBridge()
 
 cv_image = None
 
-# Variáveis para permitir que o roda_todo_frame troque dados com a máquina de estados
+# Variaveis para permitir que o roda_todo_frame troque dados com a maquina de estados
 #Verifica se o robo esta em perigo
 perigo_laser = False
 #####################
