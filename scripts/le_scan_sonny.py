@@ -15,38 +15,42 @@ def scaneou(dado):
 	# print("Faixa valida: ", dado.range_min , " - ", dado.range_max )
 	# print("Leituras:")
 	# print(np.array(dado.ranges).round(decimals=2))
-	distancia_segura = 2
-	for i in range(0,91,1):
-		if dado.ranges[i-45] < dado.range_max and dado.ranges[i-45] > dado.range_min:
-			valor = dado.ranges[i-45]
+	distancia_segura = 0.45
+	for i in range(-45,46,1):
+		if dado.ranges[i] < dado.range_max and dado.ranges[i] > dado.range_min:
+			valor = dado.ranges[i]
 			print(valor)
 			print("Sai da frente!!!")
-			if valor < distancia_segura:
-				if i <=0:
-					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 1))
+			if i <=0:
+				if valor < distancia_segura:
+					velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 					velocidade_saida.publish(velocidade)
 					perigo_laser = True
 					print("Nem Morri1!!")
-				elif i == 0:
+				else:
 					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
 					velocidade_saida.publish(velocidade)
-					perigo_laser = True
-					print("Nem Morri1!!")
-				elif i >0:
-					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, -1))
+					perigo_laser = False
+					print("Vamo que vamo!!")
+			elif i>0:
+				if valor < distancia_segura:
+					velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 					velocidade_saida.publish(velocidade)
 					perigo_laser = True
 					print("Nem Morri2!!")
-			else:
-				velocidade = Twist(Vector3(-1, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(velocidade)
-				perigo_laser = False
+				else:
+					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
+					velocidade_saida.publish(velocidade)
+					perigo_laser = False
+					print("Vamo que vamo!!")
+			
 
 		else:
-			velocidade = Twist(Vector3(-1, 0, 0), Vector3(0, 0, 0))
+			velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(velocidade)
 			perigo_laser = False
-		print(np.array(dado.ranges).round(decimals=2))
+		#print(np.array(dado.ranges).round(decimals=2))
+		print("Vamo que vamo cair fora!!")
 		#print("Intensities")
 		#print(np.array(dado.intensities).round(decimals=2))
 
