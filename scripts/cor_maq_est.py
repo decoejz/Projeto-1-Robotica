@@ -1,10 +1,6 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
 
-<<<<<<< HEAD
-
-=======
->>>>>>> a29da86071c997acabdd4d4d3c4cc101cb381cef
 import rospy
 import numpy as np
 import tf
@@ -27,7 +23,7 @@ bridge = CvBridge()
 
 cv_image = None
 
-# Variaveis para permitir que o roda_todo_frame troque dados com a maquina de estados
+# Variáveis para permitir que o roda_todo_frame troque dados com a máquina de estados
 #Verifica se o robo esta em perigo
 perigo_laser = False
 #####################
@@ -69,7 +65,7 @@ def roda_todo_frame(imagem):
 	delay = lag.nsecs
 
 	if delay > atraso and check_delay==True:
-		print("delay: {}".format(delay/E9))
+		print("delay: {}".format(delay/1E9))
 		return 
 	try:
 		antes = time.clock()
