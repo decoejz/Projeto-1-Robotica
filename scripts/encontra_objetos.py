@@ -101,7 +101,7 @@ def identifica_objeto_2(frame):
 	# 		findCircle = True
 	# 		cv2.circle(frame,(i[0],i[1]),i[2],(0,255,0),2)
 	# 		cv2.circle(frame,(i[0],i[1]),2,(0,0,255),3)
-	MIN_MATCH_COUNT = 1460
+	MIN_MATCH_COUNT = 1000
 	# if findCircle == True:
 	kp2, des2 = sift.detectAndCompute(img2,None)
 	FLANN_INDEX_KDTREE = 0
