@@ -16,7 +16,7 @@ import smach_ros
 import encontra_objetos #Para procurar os objetos
 import le_scan_sonny #Para verificar se o robo esta em perigo
 
-# from turtlebot3_msgs.msg import Sound
+from turtlebot3_msgs.msg import Sound
 
 
 bridge = CvBridge()
@@ -24,8 +24,6 @@ bridge = CvBridge()
 cv_image = None
 
 # Variáveis para permitir que o roda_todo_frame troque dados com a máquina de estados
-#Verifica se o robo esta em perigo
-perigo_laser = False
 #####################
 #Identificação do objeto 1
 media = []
@@ -38,7 +36,7 @@ objeto2 = False
 
 tolerancia_x = 50
 tolerancia_y = 20
-ang_speed = 0.3
+ang_speed = 0.2
 area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a resolução da câmera
 tolerancia_area = 20000
 
@@ -57,22 +55,17 @@ def roda_todo_frame(imagem):
 
 	global objeto2
 
-	global perigo_laser
-
 	now = rospy.get_rostime()
 	imgtime = imagem.header.stamp
 	lag = now-imgtime
 	delay = lag.nsecs
 
 	if delay > atraso and check_delay==True:
-		#print("delay: {}".format(delay/1E9))
 		return 
 	try:
 		antes = time.clock()
 		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
 		
-		perigo_laser = False
-		#Quando estiver pronto apagar o de cima. Tem uma outra forma no final do codigo na linha 200 e 207
 		media, centro, area = encontra_objetos.identifica_objeto_1(cv_image)
 		objeto2 = encontra_objetos.identifica_objeto_2(cv_image)
 		
@@ -92,8 +85,8 @@ class Girando(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		# global emitir_som
-		#global perigo_laser
+		global perigo_laser
+		global emitir_som #######Usar aqui apenas para fazer teste de som! Ativar linha 118.
 
 		if perigo_laser:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
@@ -120,7 +113,7 @@ class Girando(smach.State):
 			return 'enxergou2'
 
 		else:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.5))
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.3))
 			velocidade_saida.publish(vel)
 			# emitir_som.publish(0)
 			return 'girando'
@@ -132,7 +125,7 @@ class Reage1(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		#global perigo_laser
+		global perigo_laser
 
 		if perigo_laser:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
@@ -167,8 +160,8 @@ class Reage2(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		#global perigo_laser
-		# global emitir_som
+		global perigo_laser
+		global emitir_som #Ativar linha 173 quando estiver tudo funcionando sem o som apenas
 
 		if perigo_laser:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
@@ -176,15 +169,16 @@ class Reage2(smach.State):
 			return 'perigo'
 
 		else:
-			if objeto2 == False:
+			if objeto2:
+				# emitir_som.publish(1)
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.7))
+				velocidade_saida.publish(vel)
+				return 'centralizado'
+
+			else:##Ver de emitir sons
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				return 'procurando'
-			else:##Ver de emitir sons
-				# emitir_som.publish(1)
-				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(vel)
-				return 'centralizado'
 
 #Máquina que reage quando o robo se encontra em perigo (alguma coisa muito próximo dele)
 class Parar(smach.State):
@@ -193,12 +187,14 @@ class Parar(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		#global perigo_laser
+		global perigo_laser
+		global emitir_som #Ativar linha 197 quando estiver tudo funcionando sem o som apenas
 
 		vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 		velocidade_saida.publish(vel)
 
 		if perigo_laser:
+			# emitir_som.publish(2)
 			return 'perigo'
 		else:
 			return 'seguro'
@@ -206,10 +202,10 @@ class Parar(smach.State):
 # main
 def main():
 	global velocidade_saida
-	global buffer
-	# global emitir_som
+	global emitir_som
 	global perigo_laser
-	#global perigo_laser
+	global buffer
+	
 	rospy.init_node('cor_maq_est')
 
 	# Para usar a webcam 
@@ -217,9 +213,9 @@ def main():
 	recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
-	#perigo_laser = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
+	perigo_laser = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
 
-	# emitir_som = rospy.Publisher("/sound", Sound)
+	emitir_som = rospy.Publisher("/sound", Sound)
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])
