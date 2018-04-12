@@ -85,10 +85,10 @@ class Girando(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		global perigo_laser
+		# global perigo_laser
 		global emitir_som #######Usar aqui apenas para fazer teste de som! Ativar linha 118.
 
-		if perigo_laser:
+		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			return 'perigo'
@@ -125,9 +125,9 @@ class Reage1(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		global perigo_laser
+		# global perigo_laser
 
-		if perigo_laser:
+		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			return 'perigo'
@@ -160,19 +160,19 @@ class Reage2(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		global perigo_laser
+		# global perigo_laser
 		global emitir_som #Ativar linha 173 quando estiver tudo funcionando sem o som apenas
 
-		if perigo_laser:
+		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			return 'perigo'
 
 		else:
 			if objeto2:
-				# emitir_som.publish(1)
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.7))
-				velocidade_saida.publish(vel)
+				emitir_som.publish(1)
+				# vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.7))
+				# velocidade_saida.publish(vel)
 				return 'centralizado'
 
 			else:##Ver de emitir sons
@@ -187,14 +187,14 @@ class Parar(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		global perigo_laser
+		# global perigo_laser
 		global emitir_som #Ativar linha 197 quando estiver tudo funcionando sem o som apenas
 
 		vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 		velocidade_saida.publish(vel)
 
-		if perigo_laser:
-			# emitir_som.publish(2)
+		if le_scan_sonny.achou_perigo:
+			emitir_som.publish(2)
 			return 'perigo'
 		else:
 			return 'seguro'
@@ -203,7 +203,7 @@ class Parar(smach.State):
 def main():
 	global velocidade_saida
 	global emitir_som
-	global perigo_laser
+	# global perigo_laser
 	global buffer
 	
 	rospy.init_node('cor_maq_est')
@@ -213,7 +213,7 @@ def main():
 	recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
-	perigo_laser = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
+	perigo_laser_objeto = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
 
 	emitir_som = rospy.Publisher("/sound", Sound)
 

@@ -16,7 +16,7 @@ import smach_ros
 import matplotlib.pyplot as plt
 from math import pi
 
-img1 = cv2.imread('foto1.png', cv2.IMREAD_GRAYSCALE) #Imagem a procurar
+img1 = cv2.imread('foto3.jpg', cv2.IMREAD_GRAYSCALE) #Imagem a procurar
 sift = cv2.xfeatures2d.SIFT_create()
 time.sleep(2)
 kp1, des1 = sift.detectAndCompute(img1,None)

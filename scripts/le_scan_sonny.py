@@ -9,52 +9,28 @@ from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import LaserScan
 
 
+achou_perigo = False
+
 def scaneou(dado):
-	global perigo_laser
-	perigo_laser = False
-	# print("Faixa valida: ", dado.range_min , " - ", dado.range_max )
-	# print("Leituras:")
-	# print(np.array(dado.ranges).round(decimals=2))
-	distancia_segura = 0.45
-	for i in range(-45,46,1):
-		if i <=0:
-			if dado.ranges[i] < dado.range_max and dado.ranges[i] > dado.range_min:
-				valor = dado.ranges[i]
-				print(valor)
-				if valor < distancia_segura:
-					velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-					velocidade_saida.publish(velocidade)
-					print("Objeto não identificado na esquerda!!")
-					return True	
+	global achou_perigo
+	achou_perigo = False
+	distancia_segura = 0.25
+	for i in range(0,46,1):
+		valor = dado.ranges[i]
+		if valor < dado.range_max and valor > dado.range_min:
+			if valor < distancia_segura:
+				if i <=0:
+					achou_perigo = True
 				else:
-					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
-					velocidade_saida.publish(velocidade)
-					print("Vamo que vamo!!")
-			else:
-				velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(velocidade)
-				perigo_laser = False
-				print("Vamo que vamo cair fora!!")
-		else:
-			if dado.ranges[i] < dado.range_max and dado.ranges[i] > dado.range_min:
-				valor = dado.ranges[i]
-				print(valor)
-				print("Sai da frente!!!")
-				if valor < distancia_segura:
-					velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-					velocidade_saida.publish(velocidade)
-					print("Objeto não identificado na direita!!")
-					return True	
+					achou_perigo = True
+	for i in range(314,359,1):
+		valor = dado.ranges[i]
+		if valor < dado.range_max and valor > dado.range_min:
+			if valor < distancia_segura:
+				if i <=0:
+					achou_perigo = True
 				else:
-					velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
-					velocidade_saida.publish(velocidade)
-					print("Vamo que vamo!!")
-			else:
-				velocidade = Twist(Vector3(1, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(velocidade)
-				perigo_laser = False
-				print("Vamo que vamo cair fora!!")
-	return False
+					achou_perigo = True
 
 	
 
@@ -66,6 +42,5 @@ if __name__=="__main__":
 	recebe_scan = rospy.Subscriber("/scan", LaserScan, scaneou)
 
 	while not rospy.is_shutdown():
-		# velocidade = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-		# velocidade_saida.publish(velocidade)
+		print(achou_perigo)
 		rospy.sleep(2)
