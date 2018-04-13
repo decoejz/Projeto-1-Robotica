@@ -153,7 +153,7 @@ class Reage1(smach.State):
 				return 'alinhando'
 			
 			else:
-				vel = Twist(Vector3(0.45, 0, 0), Vector3(0, 0, 0))
+				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				return 'centralizado'
 
@@ -166,17 +166,17 @@ class Reage2(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		global emitir_som
+		# global emitir_som
 
 		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
-			emitir_som.publish(0)#VER SE PARAR É 0 OU -1!!!
+			emitir_som.publish(0)
 			return 'perigo'
 
 		else:
 			if objeto2:
-				emitir_som.publish(1)
+				# emitir_som.publish(0)
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.7))
 				velocidade_saida.publish(vel)
 				return 'centralizado'
@@ -184,7 +184,7 @@ class Reage2(smach.State):
 			else:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				emitir_som.publish(0)#VER SE PARAR É 0 OU -1!!!
+				# emitir_som.publish(0)
 				return 'procurando'
 
 #Máquina que reage quando o robo se encontra em perigo (alguma coisa muito próximo dele).
@@ -196,16 +196,16 @@ class Parar(smach.State):
 
     def execute(self, userdata):
 		global velocidade_saida
-		global emitir_som
+		# global emitir_som
 
 		vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 		velocidade_saida.publish(vel)
 
 		if le_scan_sonny.achou_perigo:
-			emitir_som.publish(2)
+			# emitir_som.publish(0)
 			return 'perigo'
 		else:
-			emitir_som.publish(0)#VER SE PARAR É 0 OU -1!!!
+			# emitir_som.publish(0)#Tentar mandar null para ver se para
 			return 'seguro'
 
 # main
@@ -227,7 +227,7 @@ def main():
 	perigo_laser_objeto = rospy.Subscriber("/scan", LaserScan, le_scan_sonny.scaneou)
 
 	#Define o som quando chamada.
-	emitir_som = rospy.Publisher("/sound", Sound)
+	# emitir_som = rospy.Publisher("/sound", Sound)
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])
