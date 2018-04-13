@@ -15,6 +15,7 @@ def scaneou(dado):
 	global achou_perigo
 	achou_perigo = False
 	distancia_segura = 0.25
+
 	for i in range(0,46,1):
 		valor = dado.ranges[i]
 		if valor < dado.range_max and valor > dado.range_min:
@@ -23,6 +24,7 @@ def scaneou(dado):
 					achou_perigo = True
 				else:
 					achou_perigo = True
+					
 	for i in range(314,359,1):
 		valor = dado.ranges[i]
 		if valor < dado.range_max and valor > dado.range_min:
@@ -34,13 +36,13 @@ def scaneou(dado):
 
 	
 
-if __name__=="__main__":
+# if __name__=="__main__":
 
-	rospy.init_node("le_scan")
+# 	rospy.init_node("le_scan")
 
-	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 3 )
-	recebe_scan = rospy.Subscriber("/scan", LaserScan, scaneou)
+# 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 3 )
+# 	recebe_scan = rospy.Subscriber("/scan", LaserScan, scaneou)
 
-	while not rospy.is_shutdown():
-		print(achou_perigo)
-		rospy.sleep(2)
+# 	while not rospy.is_shutdown():
+# 		print(achou_perigo)
+# 		rospy.sleep(2)
