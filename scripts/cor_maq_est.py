@@ -171,7 +171,7 @@ class Reage2(smach.State):
 		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
-			emitir_som.publish(0)
+			# emitir_som.publish(0)
 			return 'perigo'
 
 		else:
