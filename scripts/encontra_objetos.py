@@ -16,12 +16,19 @@ import smach_ros
 import matplotlib.pyplot as plt
 from math import pi
 
-img1 = cv2.imread('foto1.jpg', cv2.IMREAD_GRAYSCALE) #Imagem a procurar
+img1 = cv2.imread('foto4.jpg', cv2.IMREAD_GRAYSCALE) #Imagem a procurar
 sift = cv2.xfeatures2d.SIFT_create()
 time.sleep(1)
 kp1, des1 = sift.detectAndCompute(img1,None)
 
-MIN_MATCH_COUNT = 10000
+FLANN_INDEX_KDTREE = 0
+
+index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+search_params = dict(checks = 50)
+
+flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+MIN_MATCH_COUNT = 70
 
 def identifica_objeto_1(frame):
 	'''
@@ -36,8 +43,8 @@ def identifica_objeto_1(frame):
 
 	#95,50,50
 	#110,255,255
-	cor_menor = np.array([226, 81.7, 55.7])#Para o laranja colocar entre 0 e 8
-	cor_maior = np.array([220, 84.2, 62])
+	cor_menor = np.array([220, 81.7, 55.7])#Para o laranja colocar entre 0 e 8
+	cor_maior = np.array([226, 84.2, 62])
 	segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
 
 	# cor_menor = np.array([172, 50, 50])
@@ -88,7 +95,7 @@ def identifica_objeto_1(frame):
 
 def identifica_objeto_2(frame):
 	img2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	blur = cv2.GaussianBlur(img2,(5,5),0) ##Ale colocou 1 ao invés de 5
+	# blur = cv2.GaussianBlur(img2,(5,5),0) ##Ale colocou 1 ao invés de 5
 	# v2 = np.median(blur)
 	# lower = int(max(0, (1.0 - 0.0001) * v2))
 	# upper = int(min(255, (1.0 + 0.0001) * v2))
@@ -107,11 +114,7 @@ def identifica_objeto_2(frame):
 	# 		cv2.circle(frame,(i[0],i[1]),2,(0,0,255),3)
 	# if findCircle == True:
 	kp2, des2 = sift.detectAndCompute(img2,None)
-	FLANN_INDEX_KDTREE = 0
-	index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-	search_params = dict(checks = 50)
-	
-	flann = cv2.FlannBasedMatcher(index_params, search_params)
+
 	
 	matches = flann.knnMatch(des1,des2,k=2)
 	
@@ -120,8 +123,10 @@ def identifica_objeto_2(frame):
 		if m.distance < 0.7*n.distance:
 			good.append(m)
 	
+	# print('tamanho dos matches',len(good))
 	if len(good)>=MIN_MATCH_COUNT:#Antes estava apenas maior que e agora esta maior ou igual que
 		achou_objeto = True
+		# print(achou_objeto)
 	# 	src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
 	# 	dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
 	# 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
@@ -139,43 +144,3 @@ def identifica_objeto_2(frame):
 	# else:
 	# 	return(False)
 	return(achou_objeto)
-#############################################################################################
-###################Para testar caso o de cima nao funcione###################################
-#############################################################################################
-	# img2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	# blur = cv2.GaussianBlur(img2,(5,5),0)
-	# v2 = np.median(blur)
-	# lower = int(max(0, (1.0 - 0.0001) * v2))
-	# upper = int(min(255, (1.0 + 0.0001) * v2))
-	# bordas = cv2.Canny(blur, lower, upper) 
-	# achou_objeto = False
-	# kp2, des2 = sift.detectAndCompute(img2,None)
-	# FLANN_INDEX_KDTREE = 0
-	# index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-	# search_params = dict(checks = 50)
-	
-	# flann = cv2.FlannBasedMatcher(index_params, search_params)
-	
-	# matches = flann.knnMatch(des1,des2,k=2)
-	
-	# good = []
-	# for m,n in matches:
-	# 	if m.distance < 0.7*n.distance:
-	# 		good.append(m)
-	
-	# if len(good)>MIN_MATCH_COUNT:
-	# 	achou_objeto = True
-	# # 	src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-	# # 	dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-	# # 	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-	# # 	matchesMask = mask.ravel().tolist()
-	# # 	h,w = img1.shape
-	# # 	pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
-	# # 	dst = cv2.perspectiveTransform(pts,M)
-	# # 	img2b = cv2.polylines(frame,[np.int32(dst)],True,255,3, cv2.LINE_AA)
-	# # kpts = sift.detect(frame)
-	# # x = [k.pt[0] for k in kpts]
-	# # y = [k.pt[1] for k in kpts]
-	# # s = [(k.size/2)**2 * pi for k in kpts]
-
-	# return(achou_objeto)

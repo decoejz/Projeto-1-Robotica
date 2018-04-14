@@ -12,6 +12,7 @@ from sensor_msgs.msg import LaserScan
 achou_perigo = False
 
 def scaneou(dado):
+	#print("LE SCAN")
 	global achou_perigo
 	achou_perigo = False
 	distancia_segura = 0.25

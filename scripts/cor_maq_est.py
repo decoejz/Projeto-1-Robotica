@@ -41,7 +41,7 @@ area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a
 tolerancia_area = 20000
 
 # Atraso máximo permitido entre a imagem sair do Turbletbot3 e chegar no laptop do aluno
-atraso = 0.3E9
+atraso = 0.2E9
 check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 
 
@@ -61,6 +61,7 @@ def roda_todo_frame(imagem):
 	delay = lag.nsecs
 
 	if delay > atraso and check_delay==True:
+		# print("\t\tDELAY: ", delay/1.0E9)
 		return 
 	try:
 		antes = time.clock()
@@ -70,6 +71,7 @@ def roda_todo_frame(imagem):
 		objeto2 = encontra_objetos.identifica_objeto_2(cv_image)
 		
 		depois = time.clock()
+		# print("Demorou: ", depois - antes)
 		cv2.imshow("Camera", cv_image)
 	except CvBridgeError as e:
 		print('ex', e)
@@ -95,30 +97,36 @@ class Girando(smach.State):
 		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			print('PERIGO')
 			return 'perigo'
 		
 		elif len(media) != 0 and len(centro) != 0:#area!=0: ##Verificar esse encontro direitinho!!!
 			if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
 				velocidade_saida.publish(vel)
+				print('Para direita')
 				return 'girando'
 			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x): #if ou elif?? o do prof era if!
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
 				velocidade_saida.publish(vel)
+				print('Para esquerda')
 				return 'girando'
 			else:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				print('Alinhou com 1')
 				return 'alinhou1'
 
 		elif objeto2:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			print('Achou 2')
 			return 'enxergou2'
 
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 			velocidade_saida.publish(vel)
+			print('Girar e girar')
 			return 'girando'
 
 #Máquina que reage quando o objeto 1 é encontrado
@@ -134,27 +142,32 @@ class Reage1(smach.State):
 		if le_scan_sonny.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			print('PERIGO')
 			return 'perigo'
 
 		else:
 			if media is None:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				print('Sem objeto 1')
 				return 'alinhando'
 
 			elif  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				print('Para diretia')
 				return 'alinhando'
 			
 			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				print('Para esquerda')
 				return 'alinhando'
 			
 			else:
 				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				print('NO centro de 1')
 				return 'centralizado'
 
 #Máquina que reage quando o objeto 2 é encontrado
@@ -172,6 +185,7 @@ class Reage2(smach.State):
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			# emitir_som.publish(0)
+			print('PERIGO')
 			return 'perigo'
 
 		else:
@@ -179,12 +193,14 @@ class Reage2(smach.State):
 				# emitir_som.publish(0)
 				vel = Twist(Vector3(-0.3, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				print('Ta com o objeto 2')
 				return 'centralizado'
 
 			else:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				# emitir_som.publish(0)
+				print('Sem objeto 2')
 				return 'procurando'
 
 #Máquina que reage quando o robo se encontra em perigo (alguma coisa muito próximo dele).
@@ -203,9 +219,11 @@ class Parar(smach.State):
 
 		if le_scan_sonny.achou_perigo:
 			# emitir_som.publish(0)
+			print('PERIGO')
 			return 'perigo'
 		else:
 			# emitir_som.publish(0)#Tentar mandar null para ver se para
+			print('Em SEGURANCA')
 			return 'seguro'
 
 # main
@@ -218,7 +236,7 @@ def main():
 
 	# Para usar a webcam 
 	#recebedor = rospy.Subscriber("/cv_camera/image_raw/compressed", CompressedImage, roda_todo_frame, queue_size=1, buff_size = 2**24)
-	recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
+	recebedor = rospy.Subscriber("raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
 
 	#Define a velocidade quando chamada.
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
@@ -228,6 +246,8 @@ def main():
 
 	#Define o som quando chamada.
 	# emitir_som = rospy.Publisher("/sound", Sound)
+
+	print("PRINT TESTE")
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])
