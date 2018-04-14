@@ -97,13 +97,13 @@ class Girando(smach.State):
 			velocidade_saida.publish(vel)
 			return 'perigo'
 		
-		elif area!=0: ##Verificar esse encontro direitinho!!!
+		elif len(media) != 0 and len(centro) != 0:#area!=0: ##Verificar esse encontro direitinho!!!
 			if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
 				velocidade_saida.publish(vel)
 				return 'girando'
 			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x): #if ou elif?? o do prof era if!
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
 				velocidade_saida.publish(vel)
 				return 'girando'
 			else:
@@ -142,12 +142,12 @@ class Reage1(smach.State):
 				velocidade_saida.publish(vel)
 				return 'alinhando'
 
-			if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+			elif  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				return 'alinhando'
 			
-			if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
+			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				return 'alinhando'
@@ -177,7 +177,7 @@ class Reage2(smach.State):
 		else:
 			if objeto2:
 				# emitir_som.publish(0)
-				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.7))
+				vel = Twist(Vector3(-0.3, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				return 'centralizado'
 

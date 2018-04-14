@@ -21,7 +21,7 @@ sift = cv2.xfeatures2d.SIFT_create()
 time.sleep(1)
 kp1, des1 = sift.detectAndCompute(img1,None)
 
-MIN_MATCH_COUNT = 10000 #Tentar ver qual o melhor valor para colocar aqui..... Talvez precise estar dentro da função.
+MIN_MATCH_COUNT = 10000
 
 def identifica_objeto_1(frame):
 	'''
@@ -34,8 +34,10 @@ def identifica_objeto_1(frame):
 	# do vermelho:
 	frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-	cor_menor = np.array([95, 50, 50])#Para o laranja colocar entre 0 e 8
-	cor_maior = np.array([110, 255, 255])
+	#95,50,50
+	#110,255,255
+	cor_menor = np.array([226, 81.7, 55.7])#Para o laranja colocar entre 0 e 8
+	cor_maior = np.array([220, 84.2, 62])
 	segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
 
 	# cor_menor = np.array([172, 50, 50])
