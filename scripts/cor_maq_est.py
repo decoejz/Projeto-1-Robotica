@@ -26,19 +26,22 @@ cv_image = None
 # Variáveis para permitir que o roda_todo_frame troque dados com a máquina de estados
 #####################
 #Identificação do objeto 1
-media = []
-centro = []
-area = 0.0
+media1 = []
+centro1 = []
+area1 = 0.0
 #####################
 #Identificação do objeto 2
-objeto2 = False
+# objeto2 = False
+media2 = []
+centro2 = []
+area2 = 0.0
 #####################
 
 tolerancia_x = 50
 tolerancia_y = 20
 ang_speed = 0.1
-area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a resolução da câmera
-tolerancia_area = 20000
+area1_ideal = 60000 # área da distancia ideal do contorno - note que varia com a resolução da câmera
+tolerancia_area1 = 20000
 
 # Atraso máximo permitido entre a imagem sair do Turbletbot3 e chegar no laptop do aluno
 atraso = 0.2E9
@@ -49,11 +52,14 @@ def roda_todo_frame(imagem):
 	print("frame")
 	global cv_image
 
-	global media
-	global centro
-	global area
+	global media1
+	global centro1
+	global area1
 
-	global objeto2
+	# global objeto2
+	global media2
+	global centro2
+	global area2
 
 	now = rospy.get_rostime()
 	imgtime = imagem.header.stamp
@@ -67,8 +73,9 @@ def roda_todo_frame(imagem):
 		antes = time.clock()
 		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
 		
-		media, centro, area = encontra_objetos.identifica_objeto_1(cv_image)
-		objeto2 = encontra_objetos.identifica_objeto_2(cv_image)
+		media1, centro1, area1 = encontra_objetos.identifica_objeto_1(cv_image)
+		# objeto2 = encontra_objetos.identifica_objeto_2(cv_image)
+		media2, centro2, area2 = encontra_objetos.identifica_objeto_2(cv_image)
 		
 		depois = time.clock()
 		# print("Demorou: ", depois - antes)
@@ -100,13 +107,13 @@ class Girando(smach.State):
 			print('PERIGO')
 			return 'perigo'
 		
-		elif len(media) != 0 and len(centro) != 0:#area!=0: ##Verificar esse encontro direitinho!!!
-			if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+		elif len(media1) != 0 and len(centro1) != 0:#area1!=0: ##Verificar esse encontro direitinho!!!
+			if  math.fabs(media1[0]) > math.fabs(centro1[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
 				velocidade_saida.publish(vel)
 				print('Para direita')
 				return 'girando'
-			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x): #if ou elif?? o do prof era if!
+			elif math.fabs(media1[0]) < math.fabs(centro1[0] - tolerancia_x): #if ou elif?? o do prof era if!
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
 				velocidade_saida.publish(vel)
 				print('Para esquerda')
@@ -117,11 +124,27 @@ class Girando(smach.State):
 				print('Alinhou com 1')
 				return 'alinhou1'
 
-		elif objeto2:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-			velocidade_saida.publish(vel)
-			print('Achou 2')
-			return 'enxergou2'
+		# elif objeto2:
+		# 	vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+		# 	velocidade_saida.publish(vel)
+		# 	print('Achou 2')
+		# 	return 'enxergou2'
+		elif len(media2) != 0 and len(centro2) != 0:#area1!=0: ##Verificar esse encontro direitinho!!!
+			if  math.fabs(media2[0]) > math.fabs(centro2[0] + tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
+				velocidade_saida.publish(vel)
+				print('Para direita')
+				return 'girando'
+			elif math.fabs(media2[0]) < math.fabs(centro2[0] - tolerancia_x): #if ou elif?? o do prof era if!
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed)) #Talvez inverter o sentido da rotacao por conta de a camera estar de ponta cabeca
+				velocidade_saida.publish(vel)
+				print('Para esquerda')
+				return 'girando'
+			else:
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				print('Alinhou com 1')
+				return 'enxergou2'
 
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
@@ -146,19 +169,19 @@ class Reage1(smach.State):
 			return 'perigo'
 
 		else:
-			if media is None:
+			if media1 is None:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				print('Sem objeto 1')
 				return 'alinhando'
 
-			elif  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+			elif  math.fabs(media1[0]) > math.fabs(centro1[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				print('Para diretia')
+				print('Para direita')
 				return 'alinhando'
 			
-			elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
+			elif math.fabs(media1[0]) < math.fabs(centro1[0] - tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				print('Para esquerda')
@@ -167,7 +190,7 @@ class Reage1(smach.State):
 			else:
 				vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				print('NO centro de 1')
+				print('NO centro1 de 1')
 				return 'centralizado'
 
 #Máquina que reage quando o objeto 2 é encontrado
@@ -189,19 +212,42 @@ class Reage2(smach.State):
 			return 'perigo'
 
 		else:
-			if objeto2:
-				# emitir_som.publish(0)
-				vel = Twist(Vector3(-0.3, 0, 0), Vector3(0, 0, 0))
-				velocidade_saida.publish(vel)
-				print('Ta com o objeto 2')
-				return 'centralizado'
+			# if objeto2:
+			# 	# emitir_som.publish(0)
+			# 	vel = Twist(Vector3(-0.3, 0, 0), Vector3(0, 0, 0))
+			# 	velocidade_saida.publish(vel)
+			# 	print('Ta com o objeto 2')
+			# 	return 'centralizado'
 
-			else:
+			# else:
+			# 	vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			# 	velocidade_saida.publish(vel)
+			# 	# emitir_som.publish(0)
+			# 	print('Sem objeto 2')
+			# 	return 'procurando'
+			if media2 is None:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
-				# emitir_som.publish(0)
 				print('Sem objeto 2')
 				return 'procurando'
+
+			elif  math.fabs(media2[0]) > math.fabs(centro2[0] + tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				print('Para direita')
+				return 'procurando'
+			
+			elif math.fabs(media2[0]) < math.fabs(centro2[0] - tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				print('Para esquerda')
+				return 'procurando'
+			
+			else:
+				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				print('NO centro2 de 2')
+				return 'centralizado'
 
 #Máquina que reage quando o robo se encontra em perigo (alguma coisa muito próximo dele).
 #Caso ele se encontre em perigo, o robo parará de andar e emitirá um som avisando sobre 
