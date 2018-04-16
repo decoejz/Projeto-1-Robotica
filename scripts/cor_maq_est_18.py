@@ -12,7 +12,7 @@ import cv2
 import time
 from geometry_msgs.msg import Twist, Vector3, Pose
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Image, CompressedImage
+from sensor_msgs.msg import Image, CompressedImage, LaserScan
 from cv_bridge import CvBridge, CvBridgeError
 import smach
 import smach_ros
