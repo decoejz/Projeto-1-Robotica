@@ -77,7 +77,7 @@ def roda_todo_frame(imagem):
 
 class Girando(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['alinhou', 'girando'])
+        smach.State.__init__(self, outcomes=['centralizou', 'girando'])
 
     def execute(self, userdata):
 		global velocidade_saida
@@ -96,7 +96,7 @@ class Girando(smach.State):
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
-			return 'alinhou'
+			return 'centralizou'
 
 
 class Centralizado(smach.State):
@@ -107,7 +107,7 @@ class Centralizado(smach.State):
 		global velocidade_saida
 
 		if media is None:
-			return 'alinhou'
+			return 'centralizou'
 		if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 			return 'alinhando'
 		if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
@@ -136,7 +136,7 @@ def main():
 	with sm:
 	    smach.StateMachine.add('GIRANDO', Girando(),
 	                            transitions={'girando': 'GIRANDO',
-	                            'alinhou':'CENTRO'})
+	                            'centralizou':'CENTRO'})
 	    smach.StateMachine.add('CENTRO', Centralizado(),
 	                            transitions={'alinhando': 'GIRANDO',
 	                            'alinhado':'CENTRO'})
