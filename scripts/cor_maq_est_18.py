@@ -38,7 +38,7 @@ tolerancia_area = 20000
 
 # Atraso máximo permitido entre a imagem sair do Turbletbot3 e chegar no laptop do aluno
 atraso = 1.5
-check_delay = False # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
+check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 
 
 
@@ -121,7 +121,7 @@ class Centralizado(smach.State):
 def main():
 	global velocidade_saida
 	global buffer
-	rospy.init_node('cor_estados')
+	rospy.init_node('cor_maq_est_18')
 
 	# Para usar a webcam 
 	#recebedor = rospy.Subscriber("/cv_camera/image_raw/compressed", CompressedImage, roda_todo_frame, queue_size=1, buff_size = 2**24)
