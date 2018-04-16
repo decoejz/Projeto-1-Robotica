@@ -18,7 +18,7 @@ import smach
 import smach_ros
 
 import encontra_objetos_18
-import le_scann_sonny_18
+import le_scan_sonny_18
 
 bridge = CvBridge()
 
@@ -83,7 +83,7 @@ class Girando(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if le_scann_sonny_18.achou_perigo:
+		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 
@@ -113,7 +113,7 @@ class Centralizado(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if le_scann_sonny_18.achou_perigo:
+		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 
