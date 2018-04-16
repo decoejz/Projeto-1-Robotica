@@ -18,6 +18,7 @@ import smach
 import smach_ros
 
 import encontra_objetos_18
+import le_scann_sonny_18
 
 bridge = CvBridge()
 
@@ -30,9 +31,9 @@ area = 0.0
 
 
 
-tolerancia_x = 50
+tolerancia_x = 20
 tolerancia_y = 20
-ang_speed = 0.4
+ang_speed = 0.2
 area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a resolução da câmera
 tolerancia_area = 20000
 
@@ -82,17 +83,23 @@ class Girando(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if media is None or len(media)==0:
-			return 'girando'
+		if achou_perigo:
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
 
-		if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
-			velocidade_saida.publish(vel)
-			return 'girando'
-		if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
-			velocidade_saida.publish(vel)
-			return 'girando'
+		elif media is not None or len(media)!=0:
+			if math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
+				velocidade_saida.publish(vel)
+				return 'girando'
+			if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
+				velocidade_saida.publish(vel)
+				return 'girando'
+			else:
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				return 'centralizou'
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
@@ -106,14 +113,18 @@ class Centralizado(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if media is None:
-			return 'centralizou'
-		if  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+		if achou_perigo:
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
+
+		elif media is None:
 			return 'alinhando'
-		if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
+		elif  math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
+			return 'alinhando'
+		elif math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
 			return 'alinhando'
 		else:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			return 'alinhado'
 
@@ -128,6 +139,8 @@ def main():
 	recebedor = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, roda_todo_frame, queue_size=10, buff_size = 2**24)
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
+
+	perigo_laser_objeto = rospy.Subscriber("/scan", LaserScan, le_scan_sonny_18.scaneou)
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])
