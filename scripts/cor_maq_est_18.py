@@ -38,7 +38,7 @@ area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a
 tolerancia_area = 20000
 
 # Atraso máximo permitido entre a imagem sair do Turbletbot3 e chegar no laptop do aluno
-atraso = 1.5
+atraso = 0.3E9
 check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 
 
@@ -78,7 +78,7 @@ def roda_todo_frame(imagem):
 
 class Girando(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['centralizou', 'girando'])
+        smach.State.__init__(self, outcomes=['centralizou', 'girando','perigo'])
 
     def execute(self, userdata):
 		global velocidade_saida
@@ -86,8 +86,9 @@ class Girando(smach.State):
 		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			return 'perigo'
 
-		elif media is not None or len(media)!=0:
+		elif media and centro: #Tentar qualquer coisa apenas media!
 			if math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
 				velocidade_saida.publish(vel)
@@ -101,14 +102,14 @@ class Girando(smach.State):
 				velocidade_saida.publish(vel)
 				return 'centralizou'
 		else:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 			velocidade_saida.publish(vel)
-			return 'centralizou'
+			return 'girando'
 
 
-class Centralizado(smach.State):
+class Reacao1(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['alinhando', 'alinhado'])
+        smach.State.__init__(self, outcomes=['alinhando', 'alinhado','perigo'])
 
     def execute(self, userdata):
 		global velocidade_saida
@@ -116,6 +117,7 @@ class Centralizado(smach.State):
 		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			return 'perigo'
 
 		elif media is None:
 			return 'alinhando'
@@ -128,6 +130,39 @@ class Centralizado(smach.State):
 			velocidade_saida.publish(vel)
 			return 'alinhado'
 
+# class Reacao2(smach.State):
+#     def __init__(self):
+#         smach.State.__init__(self, outcomes=['procurando', 'enxergando','perigo'])
+
+#     def execute(self, userdata):
+# 		global velocidade_saida
+
+# 		if le_scan_sonny_18.achou_perigo:
+# 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+# 			velocidade_saida.publish(vel)
+# 			return 'perigo'
+
+class Perigo(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['perigo', 'salvo'])
+
+    def execute(self, userdata):
+		global velocidade_saida
+
+		if le_scan_sonny_18.achou_perigo:
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
+			# if le_scan_sonny_18.direita_perigo:
+			# 	vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0.5))
+			# 	velocidade_saida.publish(vel)
+			# elif le_scan_sonny_18.esquerda_perigo:
+			# 	vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, -0.5))
+			# 	velocidade_saida.publish(vel)
+			return 'perigo'
+		else:
+			return 'salvo'
+
+		
 # main
 def main():
 	global velocidade_saida
@@ -149,10 +184,18 @@ def main():
 	with sm:
 	    smach.StateMachine.add('GIRANDO', Girando(),
 	                            transitions={'girando': 'GIRANDO',
-	                            'centralizou':'CENTRO'})
-	    smach.StateMachine.add('CENTRO', Centralizado(),
+	                            'centralizou':'REAGE1','perigo':'PERIGOSO'})
+	    smach.StateMachine.add('REAGE1', Reacao1(),
 	                            transitions={'alinhando': 'GIRANDO',
-	                            'alinhado':'CENTRO'})
+	                            'alinhado':'REAGE1','perigo':'PERIGOSO'})
+
+	    # smach.StateMachine.add('REAGE2', Reacao2(),
+	    #                         transitions={'enxergando':'REAGE2',
+	    #                         'procurando':'GIRANDO','perigo':'PERIGOSO'})
+
+	    smach.StateMachine.add('PERIGOSO', Perigo(),
+	                            transitions={'perigo': 'PERIGOSO',
+	                            'salvo':'GIRANDO'})
 
 
 	# Execute SMACH plan
