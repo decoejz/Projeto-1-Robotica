@@ -41,7 +41,7 @@ tolerancia_area = 20000
 atraso = 0.3E9
 check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 
-
+delay = 0.02
 
 
 def roda_todo_frame(imagem):
@@ -86,24 +86,29 @@ class Girando(smach.State):
 		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
 			return 'perigo'
 
 		elif len(media)!=0 and len(centro)!=0: #Tentar qualquer coisa apenas media!
 			if math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
 				velocidade_saida.publish(vel)
+				rospy.sleep(delay)
 				return 'girando'
 			if math.fabs(media[0]) < math.fabs(centro[0] - tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 				velocidade_saida.publish(vel)
+				rospy.sleep(delay)
 				return 'girando'
 			else:
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
+				rospy.sleep(delay)
 				return 'centralizou'
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
 			return 'girando'
 
 
@@ -117,6 +122,7 @@ class Reacao1(smach.State):
 		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
 			return 'perigo'
 
 		elif media is None:
@@ -128,6 +134,7 @@ class Reacao1(smach.State):
 		else:
 			vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
 			return 'alinhado'
 
 # class Reacao2(smach.State):
@@ -152,6 +159,7 @@ class Perigo(smach.State):
 		if le_scan_sonny_18.achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
 			# if le_scan_sonny_18.direita_perigo:
 			# 	vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0.5))
 			# 	velocidade_saida.publish(vel)
