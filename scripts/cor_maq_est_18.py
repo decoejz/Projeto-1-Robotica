@@ -88,7 +88,7 @@ class Girando(smach.State):
 			velocidade_saida.publish(vel)
 			return 'perigo'
 
-		elif media and centro: #Tentar qualquer coisa apenas media!
+		elif len(media)!=0 and len(centro)!=0: #Tentar qualquer coisa apenas media!
 			if math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
 				velocidade_saida.publish(vel)
