@@ -15,20 +15,34 @@ from cv_bridge import CvBridge, CvBridgeError
 import smach
 import smach_ros
 
+img1 = cv2.imread('foto4.jpg', cv2.IMREAD_GRAYSCALE) #Imagem a procurar
+sift = cv2.xfeatures2d.SIFT_create()
+time.sleep(1)
+kp1, des1 = sift.detectAndCompute(img1,None)
+
+FLANN_INDEX_KDTREE = 0
+
+index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+search_params = dict(checks = 50)
+
+flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+MIN_MATCH_COUNT = 70
+
+achou_objeto = False
 
 def identifica_cor(frame):
 	'''
 	Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
 	'''
-
 	# No OpenCV, o canal H vai de 0 até 179, logo cores similares ao 
 	# vermelho puro (H=0) estão entre H=-8 e H=8. 
 	# Precisamos dividir o inRange em duas partes para fazer a detecção 
 	# do vermelho:
 	frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-	cor_menor = np.array([100, 50, 50])#100 - 25
-	cor_maior = np.array([115, 255, 255])#115 - 35
+	cor_menor = np.array([65, 55, 55])#100
+	cor_maior = np.array([75, 255, 255])#115
 	segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
 
 	# cor_menor = np.array([172, 50, 50])
@@ -76,3 +90,21 @@ def identifica_cor(frame):
 	centro = (frame.shape[0]//2, frame.shape[1]//2)
 
 	return media, centro, maior_contorno_area
+
+def identifica_objeto_2(frame):
+	img2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+	global achou_objeto 
+	achou_objeto = False
+	kp2, des2 = sift.detectAndCompute(img2,None)
+
+	
+	matches = flann.knnMatch(des1,des2,k=2)
+	
+	good = []
+	for m,n in matches:
+		if m.distance < 0.7*n.distance:
+			good.append(m)
+	
+	if len(good)>MIN_MATCH_COUNT:
+		achou_objeto = True
+	return(achou_objeto)

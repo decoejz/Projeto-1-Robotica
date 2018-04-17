@@ -29,11 +29,12 @@ media = []
 centro = []
 area = 0.0
 
+objeto2 = False
 
 
 tolerancia_x = 20
 tolerancia_y = 20
-ang_speed = 0.2
+ang_speed = 0.1
 area_ideal = 60000 # área da distancia ideal do contorno - note que varia com a resolução da câmera
 tolerancia_area = 20000
 
@@ -41,8 +42,10 @@ tolerancia_area = 20000
 atraso = 0.3E9
 check_delay = True # Só usar se os relógios ROS da Raspberry e do Linux desktop estiverem sincronizados
 
-delay = 0.02
+delay = 0.04
 
+
+frame_counter = 0
 
 def roda_todo_frame(imagem):
 	print("frame")
@@ -50,6 +53,9 @@ def roda_todo_frame(imagem):
 	global media
 	global centro
 	global area
+
+	global frame_counter
+	frame_counter+=1
 
 	now = rospy.get_rostime()
 	imgtime = imagem.header.stamp
@@ -62,6 +68,8 @@ def roda_todo_frame(imagem):
 		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
 
 		media, centro, area = encontra_objetos_18.identifica_cor(cv_image)
+		if frame_counter%3 ==0:
+			objeto2 = encontra_objetos_18.identifica_objeto_2(cv_image)
 		
 		depois = time.clock()
 		cv2.imshow("Camera", cv_image)
@@ -78,7 +86,7 @@ def roda_todo_frame(imagem):
 
 class Girando(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['centralizou', 'girando','perigo'])
+        smach.State.__init__(self, outcomes=['centralizou', 'girando','perigo','achou_2'])
 
     def execute(self, userdata):
 		global velocidade_saida
@@ -89,7 +97,7 @@ class Girando(smach.State):
 			rospy.sleep(delay)
 			return 'perigo'
 
-		elif len(media)!=0 and len(centro)!=0: #Tentar qualquer coisa apenas media!
+		elif area>5000 and len(media)!=0 and len(centro)!=0:
 			if math.fabs(media[0]) > math.fabs(centro[0] + tolerancia_x):
 				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, -ang_speed))
 				velocidade_saida.publish(vel)
@@ -105,6 +113,13 @@ class Girando(smach.State):
 				velocidade_saida.publish(vel)
 				rospy.sleep(delay)
 				return 'centralizou'
+
+		elif encontra_objetos_18.achou_objeto:
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
+			return 'achou_2'
+
 		else:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, ang_speed))
 			velocidade_saida.publish(vel)
@@ -137,17 +152,30 @@ class Reacao1(smach.State):
 			rospy.sleep(delay)
 			return 'alinhado'
 
-# class Reacao2(smach.State):
-#     def __init__(self):
-#         smach.State.__init__(self, outcomes=['procurando', 'enxergando','perigo'])
+class Reacao2(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['procurando', 'enxergando','perigo'])
 
-#     def execute(self, userdata):
-# 		global velocidade_saida
+    def execute(self, userdata):
+		global velocidade_saida
 
-# 		if le_scan_sonny_18.achou_perigo:
-# 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-# 			velocidade_saida.publish(vel)
-# 			return 'perigo'
+		if le_scan_sonny_18.achou_perigo:
+			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			velocidade_saida.publish(vel)
+			rospy.sleep(delay)
+			return 'perigo'
+		else:
+			if encontra_objetos_18.achou_objeto:
+				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				rospy.sleep(delay)
+				return 'enxergando'
+			else:
+				vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+				velocidade_saida.publish(vel)
+				rospy.sleep(delay)
+				return 'procurando'
+
 
 class Perigo(smach.State):
     def __init__(self):
@@ -192,14 +220,14 @@ def main():
 	with sm:
 	    smach.StateMachine.add('GIRANDO', Girando(),
 	                            transitions={'girando': 'GIRANDO',
-	                            'centralizou':'REAGE1','perigo':'PERIGOSO'})
+	                            'centralizou':'REAGE1','perigo':'PERIGOSO','achou_2':'REAGE2'})
 	    smach.StateMachine.add('REAGE1', Reacao1(),
 	                            transitions={'alinhando': 'GIRANDO',
 	                            'alinhado':'REAGE1','perigo':'PERIGOSO'})
 
-	    # smach.StateMachine.add('REAGE2', Reacao2(),
-	    #                         transitions={'enxergando':'REAGE2',
-	    #                         'procurando':'GIRANDO','perigo':'PERIGOSO'})
+	    smach.StateMachine.add('REAGE2', Reacao2(),
+	                            transitions={'enxergando':'REAGE2',
+	                            'procurando':'GIRANDO','perigo':'PERIGOSO'})
 
 	    smach.StateMachine.add('PERIGOSO', Perigo(),
 	                            transitions={'perigo': 'PERIGOSO',
