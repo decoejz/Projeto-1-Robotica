@@ -22,14 +22,10 @@ def scaneou(dado):
 		valor = dado.ranges[i]
 		if valor < dado.range_max and valor > dado.range_min:
 			if valor < distancia_segura:
-				direita_perigo = False
-				esquerda_perigo = True
 				achou_perigo = True
 					
 	for i in range(314,359,1):
 		valor = dado.ranges[i]
 		if valor < dado.range_max and valor > dado.range_min:
 			if valor < distancia_segura:
-				direita_perigo = True
-				esquerda_perigo = False
 				achou_perigo = True
