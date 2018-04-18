@@ -18,13 +18,7 @@ def scaneou(dado):
 	achou_perigo = False
 	distancia_segura = 0.25
 
-	for i in range(0,46,1):
-		valor = dado.ranges[i]
-		if valor < dado.range_max and valor > dado.range_min:
-			if valor < distancia_segura:
-				achou_perigo = True
-					
-	for i in range(314,359,1):
+	for i in range(0,359,1):
 		valor = dado.ranges[i]
 		if valor < dado.range_max and valor > dado.range_min:
 			if valor < distancia_segura:
