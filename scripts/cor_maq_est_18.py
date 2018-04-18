@@ -17,8 +17,8 @@ from cv_bridge import CvBridge, CvBridgeError
 import smach
 import smach_ros
 
-import encontra_objetos_18
-import le_scan_sonny_18
+from encontra_objetos_18 import identifica_cor, identifica_objeto_2, achou_objeto
+from le_scan_sonny_18 import scaneou, achou_perigo
 
 bridge = CvBridge()
 
@@ -67,9 +67,9 @@ def roda_todo_frame(imagem):
 		antes = time.clock()
 		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
 
-		media, centro, area = encontra_objetos_18.identifica_cor(cv_image)
+		media, centro, area = identifica_cor(cv_image)
 		if frame_counter%3 ==0:
-			objeto2 = encontra_objetos_18.identifica_objeto_2(cv_image)
+			objeto2 = identifica_objeto_2(cv_image)
 		
 		depois = time.clock()
 		cv2.imshow("Camera", cv_image)
@@ -91,7 +91,7 @@ class Girando(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if le_scan_sonny_18.achou_perigo:
+		if achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			rospy.sleep(delay)
@@ -114,7 +114,7 @@ class Girando(smach.State):
 				rospy.sleep(delay)
 				return 'centralizou'
 
-		elif encontra_objetos_18.achou_objeto:
+		elif achou_objeto:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			rospy.sleep(delay)
@@ -134,7 +134,7 @@ class Reacao1(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if le_scan_sonny_18.achou_perigo:
+		if achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			rospy.sleep(delay)
@@ -159,13 +159,13 @@ class Reacao2(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if le_scan_sonny_18.achou_perigo:
+		if achou_perigo:
 			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
 			velocidade_saida.publish(vel)
 			rospy.sleep(delay)
 			return 'perigo'
 		else:
-			if encontra_objetos_18.achou_objeto:
+			if achou_objeto:
 				vel = Twist(Vector3(-0.5, 0, 0), Vector3(0, 0, 0))
 				velocidade_saida.publish(vel)
 				rospy.sleep(delay)
@@ -184,16 +184,11 @@ class Perigo(smach.State):
     def execute(self, userdata):
 		global velocidade_saida
 
-		if le_scan_sonny_18.achou_perigo:
-			vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
-			velocidade_saida.publish(vel)
-			rospy.sleep(delay)
-			# if le_scan_sonny_18.direita_perigo:
-			# 	vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, 0.5))
-			# 	velocidade_saida.publish(vel)
-			# elif le_scan_sonny_18.esquerda_perigo:
-			# 	vel = Twist(Vector3(0.5, 0, 0), Vector3(0, 0, -0.5))
-			# 	velocidade_saida.publish(vel)
+		vel = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+		velocidade_saida.publish(vel)
+		rospy.sleep(delay)
+
+		if achou_perigo:
 			return 'perigo'
 		else:
 			return 'salvo'
@@ -211,7 +206,7 @@ def main():
 
 	velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size = 1)
 
-	perigo_laser_objeto = rospy.Subscriber("/scan", LaserScan, le_scan_sonny_18.scaneou)
+	perigo_laser_objeto = rospy.Subscriber("/scan", LaserScan, scaneou)
 
 	# Create a SMACH state machine
 	sm = smach.StateMachine(outcomes=['terminei'])
